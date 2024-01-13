@@ -1,5 +1,6 @@
-from flask import Flask, requests, jsonify
+from flask import Flask, request, jsonify
 from Crypto.Cipher import AES
+import requests
 from dotenv import load_dotenv
 import os
 import sqlite3
@@ -7,6 +8,7 @@ import sqlite3
 app = Flask(__name__)
 
 load_dotenv()
+VALIDATE = "http://127.0.0.1:8003/validate-session/"
 
 def get_data_from_db(user_id):
     conn = sqlite3.connect('fragile_data.db')
@@ -26,7 +28,13 @@ def decode_data (toDecode, tag):
 
 @app.route("/get-fragile-data", methods=["POST"])
 def get_fragile_data ():
-    data = requests.get_json()
+    data = request.get_json()
+
+    session = data["session_id"]
+    response = requests.get(f'{VALIDATE}{session}').json()
+    if (not(response["valid"])):
+         return jsonify({"message": "You do not have rigth premission."})
+    
     fragile_data = get_data_from_db(data["user_id"])
     if (len(fragile_data) == 0):
         return {"message": "Are you trying to do malicious staff?"}
