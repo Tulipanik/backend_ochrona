@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import sqlite3
 import requests
+from jsonschema import validate, ValidationError
 
 app = Flask(__name__)
 
@@ -14,57 +15,179 @@ def get_db_connection():
 @app.route("/make-transaction", methods=["POST"])
 def make_transaction ():
     data = request.get_json()
+    print(data)
 
+    schema = {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+          "login": {
+               "type": "string",
+               "pattern": "^[a-zA-Z0-9]+$"
+          },
+          "session_id": {
+               "type": "string",
+               "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+          },
+          "amount": {
+               "type": "string",
+               "pattern": "^(10000(\.00?)?|\d{0,4}(\.\d{1,2})?)$"
+          },
+          "title": {
+               "type": "string",
+               "maxLength": 35,
+               # "pattern": "^[\\p{L}0-9 ,.';-]+$"
+          },
+          "address": {
+               "type": "string",
+               "maxLength": 105,
+               # "pattern": "^[\\p{L}0-9 ,.';-]+$"
+          },
+          "account": {
+               "type": "string",
+               "pattern": "^\\d{26}$"
+          }
+          },
+          "required": ["login", "amount", "title", "address", "account", "session_id"],
+          "additionalProperties": False
+     }
+    
+    try:
+         validate(data, schema)
+    except ValidationError as e:
+         print(e)
+         return jsonify({'message': 'Are you trying to do malicious staff?'})
+         
     session = data["session_id"]
-    response = requests.get(f'{VALIDATE}{session}').json()
+    login = data["login"]
+    response = requests.get(f'{VALIDATE}{session}/{login}').json()
     if (not(response["valid"])):
          return jsonify({"message": "You do not have rigth premission."})
     
-    user = data["user_id"]
-    to = data["account_number"]
+    user = response["user_id"]
+    to = data["account"]
     amount = data["amount"]
     title = data["title"]
-    receiver_data = data["receiver_data"]
-    conn = get_db_connection()
-    acc_amount = dict((conn.execute('SELECT money_state FROM users WHERE user_id = ?', (user,)).fetchall())[0])["money_state"]
-    if acc_amount < amount:
-         return jsonify({"message": "You do not own such amount of money"})
+    receiver_data = data["address"]
 
-    if len(to) != 26 or not(int(to)):
-         return jsonify({"message": "Provided account number is incorrect"})
+    conn = get_db_connection()
+    acc_amount = dict((conn.execute('SELECT money_state FROM users WHERE user_id = ?', (user,)).fetchone()))["money_state"]
+    if acc_amount < float(amount):
+         return jsonify({"message": "You do not own such amount of money"})
+    
+
+#     if len(to) != 26 or not(int(to)):
+#          return jsonify({"message": "Provided account number is incorrect"})
 
     conn.execute('INSERT INTO transactions (to_account, amount, title, receiver_data, user_id) VALUES (?, ?, ?, ?, ?)', (to, amount, title, receiver_data, user))
     conn.commit()
     
-    get_to_account = conn.execute('SELECT user_id FROM users WHERE account number = ?', (to,))
+    conn.execute('UPDATE users SET money_state = money_state - ? WHERE user_id = ?', (amount, user))
+    conn.commit()
 
-    if len(get_to_account) == 0:
+    get_to_account = conn.execute('SELECT user_id FROM users WHERE account_number = ?', (to,)).fetchone()
+    print(get_to_account)
+
+    if get_to_account is None:
          return jsonify({"message": "Transfer realised correctly"})
 
-    get_to_account = dict(get_to_account[0])["user_id"]
+
+    get_to_account = dict(get_to_account)["user_id"]
+
     conn.execute('UPDATE users SET money_state = money_state - ? WHERE user_id = ?', (amount, get_to_account))
     conn.commit()
     conn.close()
+
+    return jsonify({"message": "Transfer realised correctly"})
 
 
 @app.route("/check-transactions", methods=["POST"])
 def check_transactions ():
      data = request.get_json()
 
+     schema = {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+               "login": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]+$"
+               },
+               "session_id": {
+                    "type": "string",
+                    "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+               }
+          },
+          "required": ["login", "session_id"],
+          "additionalProperties": False
+     }
+
+     try:
+          validate(data, schema)
+     except ValidationError as e:
+          return jsonify({'message': 'Are you trying to do malicious staff?'})
+     
      session = data["session_id"]
-     response = requests.get(f'{VALIDATE}{session}').json()
+     username = data["login"]
+     response = requests.get(f'{VALIDATE}{session}/{username}').json()
      if (not(response["valid"])):
           return jsonify({"message": "You do not have rigth premission."})
 
+     print("siema")
      conn = get_db_connection()
-     data = conn.execute('SELECT * FROM transactions WHERE user_id = ?', (data["user_id"]))
+     data = conn.execute('SELECT * FROM transactions WHERE user_id = ?', (response["user_id"], )).fetchall()
+     conn.close()
 
      if len(data) == 0:
-        return jsonify({"message": "There's no transactions yet"})
-     
-     data = dict(data[0])
-     return jsonify(data)
+          return jsonify({"message": "There's no transactions yet"})
 
+     for i in range(0, len(data)):
+          data[i] = dict(data[i])
+     
+     print(data)
+     return jsonify({'list': data})
+
+@app.route('/get-user-data', methods=['POST'])
+def get_user_data ():
+     data = request.get_json()
+     print(data)
+
+     schema = {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+               "login": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]+$"
+               },
+               "session_id": {
+                    "type": "string",
+                    "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+               }
+          },
+          "required": ["login", "session_id"],
+          "additionalProperties": False
+     }
+
+     try:
+          validate(data, schema)
+     except ValidationError as e:
+          print("siema")
+          return jsonify({'message': 'Are you trying to do malicious staff?'})
+     
+     session = data["session_id"]
+     username = data["login"]
+     response = requests.get(f'{VALIDATE}{session}/{username}').json()
+     if (not(response["valid"])):
+          return jsonify({"message": "You do not have rigth premission."})
+     
+     conn = get_db_connection()
+     data = conn.execute('SELECT * FROM users WHERE user_id = ?', (response["user_id"], )).fetchone()
+     conn.close()
+
+     data = dict(data)
+     print(data)
+     return jsonify({"money": data["money_state"], "account": data["account_number"]})
 
 if __name__ == "__main__":
     app.run(port="8005")

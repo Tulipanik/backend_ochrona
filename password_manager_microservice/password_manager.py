@@ -32,10 +32,14 @@ def get_password_from_db(user_id):
 	conn = get_db_connection()
 	combination = conn.execute('SELECT last_elem FROM passwords WHERE user_id = ?', (user_id,)).fetchone()
 	print(combination)
-	combination = dict(combination[0])['last_elem']
+	combination = dict(combination)['last_elem']
+	print(combination)
 
 	if combination is None:
 		return (False, "")
+	
+	combination = "_" + "_".join(ast.literal_eval(combination))
+	print(combination)
 	
 	format = f'SELECT hash FROM {combination} WHERE user_id = ?'
 	hash_from_db = conn.execute(format, (user_id,)).fetchall()
@@ -107,7 +111,7 @@ def verify_password():
 @app.route('/ask-for-password-count', methods=['POST'])
 def get_password_count():
 	data = request.get_json()
-
+	print(data)
 	schema = {
 		"$schema": "http://json-schema.org/draft-07/schema#",
 		"type": "object",

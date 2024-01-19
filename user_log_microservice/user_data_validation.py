@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import requests
 import sqlite3
+import random
+import time
 from jsonschema import validate, ValidationError
 
 app = Flask(__name__)
@@ -14,14 +16,18 @@ def get_db_connection():
 	conn.row_factory = sqlite3.Row
 	return conn
 
-def verify_password(data):
-	response = requests.post(password_manager_url, json=data)
+def verify_password(user_id, password):
+	response = requests.post(password_manager_url, json={'user_id': user_id, 'password': password})
 	return response.json()
 
 def ask_for_password_count (data):
 	response = requests.post(password_manager_url_count, json=data)
 	print(response)
 	return response.json()
+
+def random_delay():
+    delay = random.uniform(1, 5)
+    time.sleep(delay)
 
 @app.route("/verify-user", methods=['POST'])
 def verify_user():
@@ -54,19 +60,19 @@ def verify_user():
 	return jsonify({'message': 'User not verified'})
 
 @app.route("/ask-for-combination", methods=["POST"])
-def ask_foo_combination ():
+def ask_for_combination ():
 	data = request.get_json()
 	schema = {
-		"$schema": "http://json-schema.org/draft-07/schema#",
-		"type": "object",
-		"properties": {
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
 			"user_id": {
 				"type": "string",
 				"pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
 			}
 		},
 		"required": ["user_id"],
-		"additionalProperties": False
+	"additionalProperties": False
 	}
 
 	try:
@@ -91,16 +97,17 @@ def password_verify():
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"type": "object",
 	"properties": {
-		"user_id": {
+		"login": {
 		"type": "string",
-		"pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+		"pattern": "^[a-zA-Z0-9]+$"
 		},
 		"password": {
 		"type": "string",
 		"pattern": "^[a-zA-Z0-9]+$"
 		}
 	},
-	"required": ["user_id", "password"]
+	"required": ["login", "password"],
+	"additionalProperties": False
 	}
 
 	try:
@@ -108,15 +115,29 @@ def password_verify():
 	except ValidationError as e:
 		return jsonify({'message': 'Are you trying to do malicious staff?'})
 	
-	user_id = data["user_id"]
+	random_delay()
+	login = data["login"]
 	conn = get_db_connection()
-	user_from_db = conn.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchall()
+	user_from_db = conn.execute('SELECT user_id FROM users WHERE username = ?', (login,)).fetchall()
 
 	if (len(user_from_db) != 0):
-		response = verify_password(data)
+		user_id = dict(user_from_db[0])['user_id']
+		response = verify_password(user_id, data["password"])
 		print(response)
 		return response
 	return jsonify({'message': "You shouldn't be here"})
+
+@app.route("/get-user-id/<username>", methods=['GET'])
+def get_user_id(username):
+	conn = get_db_connection()
+	id = conn.execute('SELECT user_id FROM users WHERE username = ?', (username,)).fetchone()
+
+	if (id is None):
+		return jsonify({'message': 'Are you trying to do malicious staff?'})
+	
+	conn.close()
+	return jsonify({"user_id": dict(id)["user_id"]})
+
 
 if __name__ == "__main__":
     app.run(port=8001)
