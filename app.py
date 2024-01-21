@@ -5,6 +5,7 @@ from flask_cors import CORS
 url = "http://127.0.0.1:8001"
 VALIDATE = "http://127.0.0.1:8003/validate-session/"
 TRANSACTIONS = "http://127.0.0.1:8005/"
+FRAGILE = "http://127.0.0.1:8004/"
 headers = {"Content-Type": "application/json"}
 
 app = Flask(__name__)
@@ -40,13 +41,14 @@ def login_2():
 def verify_session():
     data = request.get_json()
     print(data)
-    response = requests.get(f"{VALIDATE}{data['session_id']}/{data['login']}")
+    response = requests.get(f"{VALIDATE}{data['session_id']}")
     print(response.json())
     return response.json()
 
 @app.route('/get-user-data', methods=['POST'])
 def get_user_data():
     data = request.get_json()
+    print(request.cookies)
     print(data)
     response = requests.post(f'{TRANSACTIONS}get-user-data', json=data, headers=headers).json()
     return response
@@ -63,6 +65,23 @@ def make_transaction():
     data = request.get_json()
     print(data)
     response = requests.post(f'{TRANSACTIONS}make-transaction', json=data, headers=headers).json()
+    return response
+
+@app.route('/get-fragile-data', methods=['POST'])
+def get_fragile_data ():
+    data = request.get_json()
+    print(data)
+
+    response = requests.post(f'{FRAGILE}get-fragile-data', json=data, headers=headers).json()
+    print(response)
+    return response
+
+@app.route('/change-password', methods=["POST"])
+def change_password ():
+    data = request.get_json()
+
+    response = requests.post(f'{url}change-password', json=data, headers=headers).json()
+
     return response
 
 if __name__ == "__main__":

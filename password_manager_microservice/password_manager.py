@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from passlib.hash import argon2
 import sqlite3
 import requests
-import ast
+import string
 import random
 import math
 from collections import Counter
@@ -38,15 +38,13 @@ def get_password_from_db(user_id):
 	if combination is None:
 		return (False, "")
 	
-	combination = "_" + "_".join(ast.literal_eval(combination))
 	print(combination)
-	
-	format = f'SELECT hash FROM {combination} WHERE user_id = ?'
-	hash_from_db = conn.execute(format, (user_id,)).fetchall()
-	if (len(hash_from_db) == 0):
+
+	hash_from_db = conn.execute('SELECT combination, hash FROM hash WHERE user_id = ? AND combination = ?', (user_id, combination)).fetchone()
+	if (hash_from_db is None):
 		return (False, "")
 	
-	hash_from_db = dict(hash_from_db[0])
+	hash_from_db = dict(hash_from_db)
 	print(hash_from_db)
 	return (True, hash_from_db["hash"])
 
@@ -81,7 +79,6 @@ def verify_password():
 		},
 		"password": {
 		"type": "string",
-		"pattern": "^[a-zA-Z0-9]+$"
 		}
 	},
 	"required": ["user_id", "password"]
@@ -132,34 +129,99 @@ def get_password_count():
 	
 	user_to_retrive_password_count = data["user_id"]
 	conn = get_db_connection()
-	hash_from_db = conn.execute('SELECT hash_list, last_elem, try FROM passwords WHERE user_id = ?', (user_to_retrive_password_count, )).fetchall()
-	conn.close()
+	hash_from_db = conn.execute('SELECT last_elem, try FROM passwords WHERE user_id = ?', (user_to_retrive_password_count, )).fetchone()
 
-	if (len(hash_from_db) == 0):
+	if (hash_from_db is None):
+		conn.close()
 		return jsonify({"message": "you shouldn't be here"})
 	
-	hash_from_db = dict(hash_from_db[0])
+	hash_from_db = dict(hash_from_db)
 	if (hash_from_db['last_elem'] is None):
-		hash_from_db = hash_from_db["hash_list"]
-		list = ast.literal_eval(hash_from_db)
-		random_element = random.choice(list).split("_")[1:]
-		conn = get_db_connection()
-		conn.execute('UPDATE passwords SET last_elem = ? WHERE user_id = ?', (str(random_element), user_to_retrive_password_count))
+		elements = conn.execute('SELECT combination FROM hash WHERE user_id = ?', (user_to_retrive_password_count, )).fetchall()
+
+		if (len(elements) == 0):
+			conn.close()
+			return jsonify({'message': 'Are you trying to do malicious staff?'})
+		
+		random_element = dict(random.choice(elements))["combination"]
+		conn.execute('UPDATE passwords SET last_elem = ? WHERE user_id = ?', (random_element, user_to_retrive_password_count))
 		conn.commit()
 	else:
-		random_element = ast.literal_eval(hash_from_db['last_elem'])
+		random_element = hash_from_db['last_elem']
 		print(hash_from_db)
 		if (hash_from_db["try"] == 3):
 			return jsonify({"message": "You're account is locked, you cannot log in, contact with bank to resolve this issue"})
 	
-	return jsonify({"elements": str(random_element)})
+	conn.close()
+	random_element = random_element.split("_")
+	return jsonify({"elements": random_element})
 
 @app.route('/change-password', methods=['POST'])
 def change_password():
 	data = request.get_json()
 	password = data["password"]
 
-	calculate_entropy(password)
+	if (data["password_change_1"] != data["password_change_2"] or len(data["password_change_1"]) > 20):
+		return jsonify({'message': "Password not changed"})
+	
+	conn = get_db_connection()
+	hash = conn.execute("SELECT hash FROM passwords WHERE user_id = ?", (data["user_id"], )).fetchone()
+	conn.close()
+
+	if(hash is None):
+		return jsonify({'message': 'Are you trying to do malicious staff?'})
+	
+	hash = dict(hash)["hash"]
+	is_valid = argon2.verify(password , hash)
+
+	if (not(is_valid)):
+		return jsonify({'message': 'Incorrect password'})
+	
+	enthropy = calculate_entropy(data["password_change_1"])
+
+	if(enthropy < 4 ):
+		return jsonify({'message': "Your password is too weak"})
+	
+	conn = get_db_connection()
+	conn.execute('DELETE * FROM hash WHERE user_id', (data["user_id"], ))
+	conn.commit()
+
+	conn.execute('DELETE * FROM passwords WHERE user_id = ?', (data["user_id"], ))
+	conn.commit()
+
+	password = data["password_change_1"]
+
+	table_names_joined = set()
+	min_length = 4
+	max_length = len(password) - 1
+	min_value = 0
+	max_value = len(password) - 1
+
+	while len(table_names_joined) < 20:
+		list_length = random.randint(min_length, max_length)
+		current_list = set()
+		while len(current_list) != list_length:
+			current_list.add(str(random.randint(min_value, max_value)))
+		
+		current_list = list(sorted(current_list))
+		table_name = "_".join(current_list)
+		table_names_joined.add(table_name)
+
+		toHash = [password[int(j)] for j in current_list]
+		toHash = "".join(toHash)
+		toHash = argon2.using(rounds=5, salt = (''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))).encode('utf-8')).hash(toHash)
+
+
+		conn.execute("INSERT OR REPLACE INTO hash (user_id, hash, combination) VALUES (?,?,?)", (user_uuid, toHash, table_name ))
+		conn.commit()
+
+
+	hashed_password = argon2.hash(password)
+	conn.execute('INSERT INTO passwords (user_id, hash, try) VALUES (?, ?, ?)', (user_uuid, hashed_password, 0 ))
+
+	conn.commit()
+
+	return jsonify({'message': 'Password changed'})
 
 
 

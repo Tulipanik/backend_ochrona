@@ -21,10 +21,6 @@ def make_transaction ():
           "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
-          "login": {
-               "type": "string",
-               "pattern": "^[a-zA-Z0-9]+$"
-          },
           "session_id": {
                "type": "string",
                "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
@@ -48,7 +44,7 @@ def make_transaction ():
                "pattern": "^\\d{26}$"
           }
           },
-          "required": ["login", "amount", "title", "address", "account", "session_id"],
+          "required": ["amount", "title", "address", "account", "session_id"],
           "additionalProperties": False
      }
     
@@ -59,8 +55,7 @@ def make_transaction ():
          return jsonify({'message': 'Are you trying to do malicious staff?'})
          
     session = data["session_id"]
-    login = data["login"]
-    response = requests.get(f'{VALIDATE}{session}/{login}').json()
+    response = requests.get(f'{VALIDATE}{session}').json()
     if (not(response["valid"])):
          return jsonify({"message": "You do not have rigth premission."})
     
@@ -74,10 +69,6 @@ def make_transaction ():
     acc_amount = dict((conn.execute('SELECT money_state FROM users WHERE user_id = ?', (user,)).fetchone()))["money_state"]
     if acc_amount < float(amount):
          return jsonify({"message": "You do not own such amount of money"})
-    
-
-#     if len(to) != 26 or not(int(to)):
-#          return jsonify({"message": "Provided account number is incorrect"})
 
     conn.execute('INSERT INTO transactions (to_account, amount, title, receiver_data, user_id) VALUES (?, ?, ?, ?, ?)', (to, amount, title, receiver_data, user))
     conn.commit()
@@ -109,16 +100,12 @@ def check_transactions ():
           "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
-               "login": {
-                    "type": "string",
-                    "pattern": "^[a-zA-Z0-9]+$"
-               },
                "session_id": {
                     "type": "string",
                     "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
                }
           },
-          "required": ["login", "session_id"],
+          "required": ["session_id"],
           "additionalProperties": False
      }
 
@@ -128,8 +115,7 @@ def check_transactions ():
           return jsonify({'message': 'Are you trying to do malicious staff?'})
      
      session = data["session_id"]
-     username = data["login"]
-     response = requests.get(f'{VALIDATE}{session}/{username}').json()
+     response = requests.get(f'{VALIDATE}{session}').json()
      if (not(response["valid"])):
           return jsonify({"message": "You do not have rigth premission."})
 
@@ -156,16 +142,12 @@ def get_user_data ():
           "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
-               "login": {
-                    "type": "string",
-                    "pattern": "^[a-zA-Z0-9]+$"
-               },
                "session_id": {
                     "type": "string",
                     "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
                }
           },
-          "required": ["login", "session_id"],
+          "required": ["session_id"],
           "additionalProperties": False
      }
 
@@ -176,8 +158,7 @@ def get_user_data ():
           return jsonify({'message': 'Are you trying to do malicious staff?'})
      
      session = data["session_id"]
-     username = data["login"]
-     response = requests.get(f'{VALIDATE}{session}/{username}').json()
+     response = requests.get(f'{VALIDATE}{session}').json()
      if (not(response["valid"])):
           return jsonify({"message": "You do not have rigth premission."})
      

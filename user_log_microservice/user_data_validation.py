@@ -9,7 +9,8 @@ app = Flask(__name__)
 
 password_manager_url = "http://127.0.0.1:8002/verify-password"
 password_manager_url_count = "http://127.0.0.1:8002/ask-for-password-count"
-
+password_manager_password_change = "http://127.0.0.1:8002/change-password"
+verify_session = "http://127.0.0.1:8003/validate-session/"
 
 def get_db_connection():
 	conn = sqlite3.connect('user_database.db')
@@ -50,6 +51,7 @@ def verify_user():
 	except ValidationError as e:
 		return jsonify({'message': 'Incorrect payload'})
 	
+	random_delay()
 	username = data["login"]
 	conn = get_db_connection()
 	user_from_db = conn.execute('SELECT user_id FROM users WHERE username = ?', (username,)).fetchall()
@@ -82,9 +84,9 @@ def ask_for_combination ():
 	
 	user_id = data['user_id']
 	conn = get_db_connection()
-	user_from_db = conn.execute('SELECT user_id FROM users WHERE user_id = ?', (user_id,)).fetchall()
+	user_from_db = conn.execute('SELECT user_id FROM users WHERE user_id = ?', (user_id,)).fetchone()
 	conn.close()
-	if (len(user_from_db) != 0):
+	if (not(user_from_db is None)):
 		response = ask_for_password_count(data)
 		return jsonify(response)
 	return jsonify({'message': "You shouldn't be here"})
@@ -126,6 +128,31 @@ def password_verify():
 		print(response)
 		return response
 	return jsonify({'message': "You shouldn't be here"})
+
+@app.route("/change-password", methods=["POST"])
+def change_password ():
+	data = request.get_json()
+
+	response = requests.get(f"{verify_session}{data['session_id']}").json()
+
+	if(not(response["valid"])):
+		return jsonify({'message': 'You not have right premissions'})
+
+	conn = get_db_connection()
+	id = conn.execute('SELECT user_id FROM users WHERE username = ?', (username,)).fetchone()
+
+	if (id is None):
+		return jsonify({'message': 'Are you trying to do malicious staff?'})
+	
+	conn.close()
+	data["user_id"] = dict(id)["user_id"]
+
+	response = requests.post(f"{change_password}", json=data).json()
+	return response
+
+	
+
+
 
 @app.route("/get-user-id/<username>", methods=['GET'])
 def get_user_id(username):
