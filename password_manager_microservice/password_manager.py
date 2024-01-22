@@ -13,15 +13,22 @@ app = Flask(__name__)
 SESSION_URL = "http://127.0.0.1:8003"
 headers = {"Content-Type": "application/json"}
 
-def calculate_entropy(data):
-    data_size = len(data)
-    char_count = Counter(data)
+def calculate_entropy(text):
+    leng = 0
+    stat = {}
+    for symb in text:
+        leng += 1
+        if symb in stat:
+                stat[symb] += 1
+        else:
+                stat[symb] = 1
 
-    probabilities = [char_count[char] / data_size for char in set(data)]
+    H = 0.0
+    for znak in stat:
+        p_i = stat[znak]/leng
+        H -= p_i * math.log2(p_i)
 
-    entropy = -sum(p * math.log2(p) for p in probabilities)
-
-    return entropy
+    return H
 
 def get_db_connection():
         conn = sqlite3.connect('password.db')
@@ -159,13 +166,24 @@ def get_password_count():
 @app.route('/change-password', methods=['POST'])
 def change_password():
 	data = request.get_json()
+	print(data['session_id'])
+
+	response = requests.get(f"{SESSION_URL}/validate-session/{data['session_id']}").json()
+
+	print(response)
+
+	if (not(response["valid"])):
+		return jsonify({'message': 'Are you trying to do malicious staff?'})
+	
 	password = data["password"]
 
-	if (data["password_change_1"] != data["password_change_2"] or len(data["password_change_1"]) > 20):
+	print(data["password_change_1"])
+	print(data["password_change_2"])
+	if (data["password_change_1"] != data["password_change_2"] or len(data["password_change_1"]) > 20 or len(data["password_change_1"]) < 8):
 		return jsonify({'message': "Password not changed"})
 	
 	conn = get_db_connection()
-	hash = conn.execute("SELECT hash FROM passwords WHERE user_id = ?", (data["user_id"], )).fetchone()
+	hash = conn.execute("SELECT hash FROM passwords WHERE user_id = ?", (response["user_id"], )).fetchone()
 	conn.close()
 
 	if(hash is None):
@@ -179,14 +197,14 @@ def change_password():
 	
 	enthropy = calculate_entropy(data["password_change_1"])
 
-	if(enthropy < 4 ):
+	if(enthropy < 3 ):
 		return jsonify({'message': "Your password is too weak"})
 	
 	conn = get_db_connection()
-	conn.execute('DELETE * FROM hash WHERE user_id', (data["user_id"], ))
+	conn.execute('DELETE FROM hash WHERE user_id = ?', (response["user_id"], ))
 	conn.commit()
 
-	conn.execute('DELETE * FROM passwords WHERE user_id = ?', (data["user_id"], ))
+	conn.execute('DELETE FROM passwords WHERE user_id = ?', (response["user_id"], ))
 	conn.commit()
 
 	password = data["password_change_1"]
@@ -212,12 +230,12 @@ def change_password():
 		toHash = argon2.using(rounds=5, salt = (''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))).encode('utf-8')).hash(toHash)
 
 
-		conn.execute("INSERT OR REPLACE INTO hash (user_id, hash, combination) VALUES (?,?,?)", (user_uuid, toHash, table_name ))
+		conn.execute("INSERT OR REPLACE INTO hash (user_id, hash, combination) VALUES (?,?,?)", (response["user_id"], toHash, table_name ))
 		conn.commit()
 
 
 	hashed_password = argon2.hash(password)
-	conn.execute('INSERT INTO passwords (user_id, hash, try) VALUES (?, ?, ?)', (user_uuid, hashed_password, 0 ))
+	conn.execute('INSERT INTO passwords (user_id, hash, try) VALUES (?, ?, ?)', (response["user_id"], hashed_password, 0 ))
 
 	conn.commit()
 

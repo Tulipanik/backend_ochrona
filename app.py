@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import requests
 from flask_cors import CORS
+from jsonschema import validate, ValidationError
 
 url = "http://127.0.0.1:8001"
 VALIDATE = "http://127.0.0.1:8003/validate-session/"
@@ -14,15 +15,24 @@ CORS(app, origins=["http://localhost:3000"])
 @app.route('/login-1', methods=['POST'])
 def login():
     data = request.get_json()
-    print(data)
+
+    schema = {
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"required": ["login"]
+	}
+    
+    try:
+        validate(data, schema)
+    except ValidationError as e:
+        return jsonify({'message': 'Are you trying to do malicious staff?'})
+
     response = requests.post(f'{url}/verify-user', json=data, headers=headers)
     json = response.json()
-    print(json)
     
     if "user_id" in json:
         response = requests.post(f"{url}/ask-for-combination", json=json, headers=headers)
         response = response.json()
-        print(response)
         return response
 
     return jsonify({'message': "there's an error during verification process"})
@@ -79,8 +89,10 @@ def get_fragile_data ():
 @app.route('/change-password', methods=["POST"])
 def change_password ():
     data = request.get_json()
+    print(data)
 
-    response = requests.post(f'{url}change-password', json=data, headers=headers).json()
+    response = requests.post(f'{url}/change-password', json=data, headers=headers).json()
+    print(response)
 
     return response
 

@@ -133,21 +133,15 @@ def password_verify():
 def change_password ():
 	data = request.get_json()
 
+	print(data["session_id"])
 	response = requests.get(f"{verify_session}{data['session_id']}").json()
+	print(response)
 
 	if(not(response["valid"])):
 		return jsonify({'message': 'You not have right premissions'})
 
-	conn = get_db_connection()
-	id = conn.execute('SELECT user_id FROM users WHERE username = ?', (username,)).fetchone()
-
-	if (id is None):
-		return jsonify({'message': 'Are you trying to do malicious staff?'})
-	
-	conn.close()
-	data["user_id"] = dict(id)["user_id"]
-
-	response = requests.post(f"{change_password}", json=data).json()
+	response = requests.post(f"{password_manager_password_change}", json=data).json()
+	print(response)
 	return response
 
 	
