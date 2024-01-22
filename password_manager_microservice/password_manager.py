@@ -75,6 +75,7 @@ def clean_after_correct_verification(user_id):
 @app.route("/verify-password", methods=['POST'])
 def verify_password():
 	data = request.get_json()
+	print(data)
 
 	schema = {
 	"$schema": "http://json-schema.org/draft-07/schema#",
@@ -90,6 +91,8 @@ def verify_password():
 	},
 	"required": ["user_id", "password"]
 	}
+
+	print(data)
 
 	try:
 		validate(data, schema)

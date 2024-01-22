@@ -32,7 +32,6 @@ def decode_data (toDecode, tag):
 def get_fragile_data ():
     data = request.get_json()
 
-
     schema = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
