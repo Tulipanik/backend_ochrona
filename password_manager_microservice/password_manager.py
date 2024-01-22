@@ -38,28 +38,22 @@ def get_db_connection():
 def get_password_from_db(user_id):
 	conn = get_db_connection()
 	combination = conn.execute('SELECT last_elem FROM passwords WHERE user_id = ?', (user_id,)).fetchone()
-	print(combination)
 	combination = dict(combination)['last_elem']
-	print(combination)
 
 	if combination is None:
 		return (False, "")
-	
-	print(combination)
 
 	hash_from_db = conn.execute('SELECT combination, hash FROM hash WHERE user_id = ? AND combination = ?', (user_id, combination)).fetchone()
 	if (hash_from_db is None):
 		return (False, "")
 	
 	hash_from_db = dict(hash_from_db)
-	print(hash_from_db)
 	return (True, hash_from_db["hash"])
 
 
 def check_try_count(user_id):
 	conn = get_db_connection()
 	conn.execute('UPDATE passwords SET try = try + 1 WHERE user_id = ?', (user_id,))
-	print("updated")
 	conn.commit()
 	tries = conn.execute('SELECT try FROM passwords WHERE user_id = ?', (user_id, )).fetchone()
 	conn.close()
@@ -75,7 +69,6 @@ def clean_after_correct_verification(user_id):
 @app.route("/verify-password", methods=['POST'])
 def verify_password():
 	data = request.get_json()
-	print(data)
 
 	schema = {
 	"$schema": "http://json-schema.org/draft-07/schema#",
@@ -87,12 +80,12 @@ def verify_password():
 		},
 		"password": {
 		"type": "string",
+		"maxLength": 20,
+		"minLength": 8,
 		}
 	},
 	"required": ["user_id", "password"]
 	}
-
-	print(data)
 
 	try:
 		validate(data, schema)
@@ -118,7 +111,7 @@ def verify_password():
 @app.route('/ask-for-password-count', methods=['POST'])
 def get_password_count():
 	data = request.get_json()
-	print(data)
+
 	schema = {
 		"$schema": "http://json-schema.org/draft-07/schema#",
 		"type": "object",
@@ -158,7 +151,7 @@ def get_password_count():
 		conn.commit()
 	else:
 		random_element = hash_from_db['last_elem']
-		print(hash_from_db)
+
 		if (hash_from_db["try"] == 3):
 			return jsonify({"message": "You're account is locked, you cannot log in, contact with bank to resolve this issue"})
 	
@@ -169,19 +162,47 @@ def get_password_count():
 @app.route('/change-password', methods=['POST'])
 def change_password():
 	data = request.get_json()
-	print(data['session_id'])
+
+	schema = {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+          "session_id": {
+               "type": "string",
+               "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+          },
+          "password": {
+               "type": "string",
+			   "maxLenght": 20,
+			   "minLenght": 8
+          },
+          "password_change_1": {
+               "type": "string",
+			   "maxLenght": 20,
+			   "minLenght": 8
+          },
+          "password_change_2": {
+               "type": "string",
+               "maxLenght": 20,
+			   "minLenght": 8
+          }
+          },
+          "required": ["session_id", "password", "password_change_1", "password_change_2"],
+          "additionalProperties": False
+     }
+	
+	try:
+		validate(data, schema)
+	except ValidationError as e:
+		return jsonify({'message': 'Are you trying to do malicious staff?'})
 
 	response = requests.get(f"{SESSION_URL}/validate-session/{data['session_id']}").json()
-
-	print(response)
 
 	if (not(response["valid"])):
 		return jsonify({'message': 'Are you trying to do malicious staff?'})
 	
 	password = data["password"]
 
-	print(data["password_change_1"])
-	print(data["password_change_2"])
 	if (data["password_change_1"] != data["password_change_2"] or len(data["password_change_1"]) > 20 or len(data["password_change_1"]) < 8):
 		return jsonify({'message': "Password not changed"})
 	

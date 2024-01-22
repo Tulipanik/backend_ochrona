@@ -23,7 +23,6 @@ def verify_password(user_id, password):
 
 def ask_for_password_count (data):
 	response = requests.post(password_manager_url_count, json=data)
-	print(response)
 	return response.json()
 
 def random_delay():
@@ -105,7 +104,6 @@ def password_verify():
 		},
 		"password": {
 		"type": "string",
-		"pattern": "^[a-zA-Z0-9]+$"
 		}
 	},
 	"required": ["login", "password"],
@@ -125,28 +123,53 @@ def password_verify():
 	if (len(user_from_db) != 0):
 		user_id = dict(user_from_db[0])['user_id']
 		response = verify_password(user_id, data["password"])
-		print(response)
 		return response
 	return jsonify({'message': "You shouldn't be here"})
 
 @app.route("/change-password", methods=["POST"])
 def change_password ():
 	data = request.get_json()
+	
+	schema = {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+          "session_id": {
+               "type": "string",
+               "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+          },
+          "password": {
+               "type": "string",
+			   "maxLenght": 20,
+			   "minLenght": 8
+          },
+          "password_change_1": {
+               "type": "string",
+			   "maxLenght": 20,
+			   "minLenght": 8
+          },
+          "password_change_2": {
+               "type": "string",
+               "maxLenght": 20,
+			   "minLenght": 8
+          }
+          },
+          "required": ["session_id", "password", "password_change_1", "password_change_2"],
+          "additionalProperties": False
+     }
+	
+	try:
+		validate(data, schema)
+	except ValidationError as e:
+		return jsonify({'message': 'Are you trying to do malicious staff?'})
 
-	print(data["session_id"])
 	response = requests.get(f"{verify_session}{data['session_id']}").json()
-	print(response)
 
 	if(not(response["valid"])):
 		return jsonify({'message': 'You not have right premissions'})
 
 	response = requests.post(f"{password_manager_password_change}", json=data).json()
-	print(response)
 	return response
-
-	
-
-
 
 @app.route("/get-user-id/<username>", methods=['GET'])
 def get_user_id(username):

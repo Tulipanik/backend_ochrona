@@ -15,7 +15,6 @@ def get_db_connection():
 @app.route("/make-transaction", methods=["POST"])
 def make_transaction ():
     data = request.get_json()
-    print(data)
 
     schema = {
           "$schema": "http://json-schema.org/draft-07/schema#",
@@ -32,12 +31,12 @@ def make_transaction ():
           "title": {
                "type": "string",
                "maxLength": 35,
-               # "pattern": "^[\\p{L}0-9 ,.';-]+$"
+               "pattern": "^[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ0-9, -]+$"
           },
           "address": {
                "type": "string",
                "maxLength": 105,
-               # "pattern": "^[\\p{L}0-9 ,.';-]+$"
+               "pattern": "^[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ0-9, -]+$"
           },
           "account": {
                "type": "string",
@@ -51,7 +50,6 @@ def make_transaction ():
     try:
          validate(data, schema)
     except ValidationError as e:
-         print(e)
          return jsonify({'message': 'Are you trying to do malicious staff?'})
          
     session = data["session_id"]
@@ -77,7 +75,6 @@ def make_transaction ():
     conn.commit()
 
     get_to_account = conn.execute('SELECT user_id FROM users WHERE account_number = ?', (to,)).fetchone()
-    print(get_to_account)
 
     if get_to_account is None:
          return jsonify({"message": "Transfer realised correctly"})
@@ -119,7 +116,6 @@ def check_transactions ():
      if (not(response["valid"])):
           return jsonify({"message": "You do not have rigth premission."})
 
-     print("siema")
      conn = get_db_connection()
      data = conn.execute('SELECT * FROM transactions WHERE user_id = ?', (response["user_id"], )).fetchall()
      conn.close()
@@ -130,13 +126,11 @@ def check_transactions ():
      for i in range(0, len(data)):
           data[i] = dict(data[i])
      
-     print(data)
      return jsonify({'list': data})
 
 @app.route('/get-user-data', methods=['POST'])
 def get_user_data ():
      data = request.get_json()
-     print(data)
 
      schema = {
           "$schema": "http://json-schema.org/draft-07/schema#",
@@ -154,7 +148,6 @@ def get_user_data ():
      try:
           validate(data, schema)
      except ValidationError as e:
-          print("siema")
           return jsonify({'message': 'Are you trying to do malicious staff?'})
      
      session = data["session_id"]
@@ -167,7 +160,6 @@ def get_user_data ():
      conn.close()
 
      data = dict(data)
-     print(data)
      return jsonify({"money": data["money_state"], "account": data["account_number"]})
 
 if __name__ == "__main__":

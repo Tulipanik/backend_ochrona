@@ -25,7 +25,6 @@ def decode_data (toDecode, tag):
     key = os.getenv('KEY').encode('utf-8')
     cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
     plaintext = cipher.decrypt_and_verify(toDecode, tag)
-    print(plaintext)
     return plaintext.decode('utf-8')
 
 @app.route("/get-fragile-data", methods=["POST"])
@@ -37,15 +36,12 @@ def get_fragile_data ():
         "type": "object",
         "properties": {
         "session_id": {
-            "type": "string",
-            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+            "type": "string","pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
         }
         },
         "required": [ "session_id"],
         "additionalProperties": False
     }
-
-    print(data)
 
     try:
         validate(data, schema)
@@ -63,7 +59,7 @@ def get_fragile_data ():
 
     id_card = decode_data(fragile_data["id_card"],fragile_data["id_card_tag"])
     card_number = decode_data(fragile_data["card_number"],fragile_data["card_number_tag"])
-    print(card_number)
+
     return jsonify({"card_id": id_card, "card_number": card_number})
     
 if __name__ == "__main__":
