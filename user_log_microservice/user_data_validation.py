@@ -104,6 +104,7 @@ def password_verify():
 		},
 		"password": {
 		"type": "string",
+		"maxLength": 20,
 		}
 	},
 	"required": ["login", "password"],

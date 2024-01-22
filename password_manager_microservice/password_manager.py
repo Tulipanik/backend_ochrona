@@ -81,7 +81,6 @@ def verify_password():
 		"password": {
 		"type": "string",
 		"maxLength": 20,
-		"minLength": 8,
 		}
 	},
 	"required": ["user_id", "password"]
