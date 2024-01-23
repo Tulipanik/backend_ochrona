@@ -1,16 +1,22 @@
 "use client";
 
 import * as sessionCookie from "@/utils/cookie";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
+import PasswordMeterInput from "@/components/PasswordStrength";
 
 export default function UserData() {
   const [see, setSee] = useState(false);
-  const formData = {
+  cosnt[(password, setPassword)] = useState("");
+  let formData = {
     password: "",
-    password_change_1: "",
+    password_change_1: password,
     password_change_2: "",
   };
+
+  useEffect(() => {
+    formData = { ...formData, password_change_1: password };
+  }, [password]);
 
   const initialFragileData = {
     card_id: "",
@@ -74,8 +80,9 @@ export default function UserData() {
           <input
             type="text"
             placeholder="new password"
-            onChange={(e) => (formData.password_change_1 = e.target.value)}
+            onChange={(e) => (formData.password_change_1 = password)}
           />
+          <PasswordMeterInput password={password} />
           <input
             type="text"
             placeholder="confirm new password"
