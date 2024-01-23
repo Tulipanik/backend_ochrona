@@ -1,5 +1,0 @@
-flask
-passlib
-argon2-cffi
-requests
-jsonschema
