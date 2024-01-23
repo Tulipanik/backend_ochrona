@@ -42,11 +42,12 @@ def login():
         response = response.json()
         return response
 
-    return jsonify({'message': "there's an error during verification process"})
+    return json
 
 @app.route('/login-2', methods=['POST'])
 def login_2():
     data = request.get_json()
+    print(data)
 
     schema = {
 	"$schema": "http://json-schema.org/draft-07/schema#",

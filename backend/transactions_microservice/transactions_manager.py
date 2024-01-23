@@ -117,16 +117,21 @@ def check_transactions ():
           return jsonify({"message": "You do not have rigth premission."})
 
      conn = get_db_connection()
+     user_acc = dict(conn.execute('SELECT account_number FROM users WHERE user_id = ?', (response["user_id"], )).fetchone())["account_number"]
      data = conn.execute('SELECT * FROM transactions WHERE user_id = ?', (response["user_id"], )).fetchall()
+     data2 = conn.execute('SELECT * FROM transactions WHERE to_account = ?', (user_acc, )).fetchall()
      conn.close()
 
-     if len(data) == 0:
+     if (len(data) == 0 and len(data2) == 0):
           return jsonify({"message": "There's no transactions yet"})
 
      for i in range(0, len(data)):
           data[i] = dict(data[i])
+
+     for i in range(0, len(data2)):
+          data2[i] = dict(data2[i])
      
-     return jsonify({'list': data})
+     return jsonify({'list': data, 'list_2': data2})
 
 @app.route('/get-user-data', methods=['POST'])
 def get_user_data ():

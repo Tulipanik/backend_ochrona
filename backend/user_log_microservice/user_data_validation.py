@@ -8,7 +8,9 @@ from jsonschema import validate, ValidationError
 app = Flask(__name__)
 
 password_manager_url = "http://password:8002/verify-password"
+password_manager_url_fake = "http://password:8002/verify-password-fake"
 password_manager_url_count = "http://password:8002/ask-for-password-count"
+password_manager_url_fake = "http://password:8002/ask-for-password-fake"
 password_manager_password_change = "http://password:8002/change-password"
 verify_session = "http://session:8003/validate-session/"
 
@@ -21,8 +23,16 @@ def verify_password(user_id, password):
 	response = requests.post(password_manager_url, json={'user_id': user_id, 'password': password})
 	return response.json()
 
+def verify_fake(data):
+	response = requests.post(password_manager_url_fake, json=data)
+	return response.json()
+
 def ask_for_password_count (data):
 	response = requests.post(password_manager_url_count, json=data)
+	return response.json()
+
+def ask_for_password_fake (data):
+	response = requests.post(password_manager_url_fake, json=data)
 	return response.json()
 
 def random_delay():
@@ -58,7 +68,8 @@ def verify_user():
 	if (len(user_from_db) != 0):
 		user_from_db = dict(user_from_db[0])["user_id"]
 		return jsonify({'user_id': user_from_db})
-	return jsonify({'message': 'User not verified'})
+	response = ask_for_password_fake(data)
+	return response
 
 @app.route("/ask-for-combination", methods=["POST"])
 def ask_for_combination ():
@@ -94,6 +105,7 @@ def ask_for_combination ():
 @app.route("/verify-password", methods=['POST'])
 def password_verify():
 	data = request.get_json()
+	print(data)
 	schema = {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"type": "object",
@@ -125,7 +137,9 @@ def password_verify():
 		user_id = dict(user_from_db[0])['user_id']
 		response = verify_password(user_id, data["password"])
 		return response
-	return jsonify({'message': "You shouldn't be here"})
+	
+	response = verify_fake(data)
+	return response
 
 @app.route("/change-password", methods=["POST"])
 def change_password ():

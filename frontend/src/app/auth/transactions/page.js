@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 export default function Transactions() {
   const router = useRouter();
   const [transactions, setTransactions] = useState([]);
+  const [transactions2, setTransactions2] = useState([]);
 
   useEffect(() => {
     async function getData() {
@@ -20,8 +21,11 @@ export default function Transactions() {
         }
       );
 
+      console.log(response);
+
       if (response.data.list) {
         setTransactions(response.data.list);
+        setTransactions2(response.data.list_2);
       }
     }
     getData();
@@ -36,7 +40,11 @@ export default function Transactions() {
       >
         Create new transaction
       </button>
+      <div>Outcomes:</div>
       <Table tableData={transactions} />
+      <div>Incomes:</div>
+
+      <Table tableData={transactions2} />
     </div>
   );
 }

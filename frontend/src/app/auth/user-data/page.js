@@ -57,8 +57,6 @@ export default function UserData() {
       session_id: session_id.value,
     });
 
-    console.log(response);
-
     if (response.data.message) {
       alert(response.data.message);
     }

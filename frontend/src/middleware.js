@@ -4,7 +4,7 @@ import { checkCookie, getCookie } from "@/utils/cookie";
 export async function middleware(request) {
   if (checkCookie()) {
     const cookie = getCookie();
-    let response = await fetch("http://127.0.0.1:8000/verify-session", {
+    let response = await fetch("http://app:8000/verify-session", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

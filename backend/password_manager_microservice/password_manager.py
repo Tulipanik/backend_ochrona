@@ -107,6 +107,48 @@ def verify_password():
 		return jsonify({"message": "invalid password"})
 	return jsonify({"message": "you shouldn't be here"})
 
+
+@app.route("/verify-password-fake", methods=['POST'])
+def verify_password_2():
+	data = request.get_json()
+
+	schema = {
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"login": {
+		"type": "string",
+		"pattern": "^[a-zA-Z0-9]+$"
+		},
+		"password": {
+		"type": "string",
+		"maxLength": 20,
+		}
+	},
+	"required": ["login", "password"],
+	"additionalProperties": False
+	}
+
+
+	try:
+		validate(data, schema)
+	except ValidationError as e:
+		return jsonify({'message': 'Are you trying to do malicious staff?'})
+
+	conn = get_db_connection()
+	conn.execute('UPDATE fake SET try = try + 1 WHERE username = ?', (data["username"],))
+	conn.commit()
+
+	tries = dict(conn.execute('SELECT try FROM fake WHERE usersname = ?', (data["username"],)).fetchone())["try"]
+
+	conn.close()
+
+	if (tries > 3):
+		return jsonify({"message": "You're account is locked, you cannot log in, contact with bank to resolve this issue"})
+	
+	return jsonify({"message": "invalid password"})
+
+
 @app.route('/ask-for-password-count', methods=['POST'])
 def get_password_count():
 	data = request.get_json()
@@ -157,6 +199,49 @@ def get_password_count():
 	conn.close()
 	random_element = random_element.split("_")
 	return jsonify({"elements": random_element})
+
+@app.route('/ask-for-password-fake', methods=['POST'])
+def get_password_count_2():
+	data = request.get_json()
+
+	schema = {
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"login": {
+		"type": "string",
+		"pattern": "^[a-zA-Z0-9]+$"
+		}
+	},
+	"required": ["login"],
+	"additionalProperties": False
+	}
+
+	try:
+		validate(data, schema)
+	except ValidationError as e:
+		return jsonify({'message': 'Are you trying to do malicious staff?'})
+	
+	conn = get_db_connection()
+	hash_from_db = conn.execute('SELECT last FROM fake WHERE username = ?', (data["login"], )).fetchone()
+
+	if (hash_from_db is None):
+		list_length = random.randint(4, 20)
+		current_list = set()
+		while len(current_list) != list_length:
+			current_list.add(str(random.randint(4, 20)))
+
+		current_list = list(sorted(current_list))
+		table_name = "_".join(current_list)
+		conn.execute('INSERT INTO fake (username, last, try) VALUES (?,?,?)', (data["login"], table_name, 0))
+		conn.commit()
+		conn.close()
+		return jsonify({"elements": current_list})
+	
+	hash_from_db = dict(hash_from_db)["last"]
+	random_element = random_element.split("_")
+	return jsonify({"elements": random_element})
+
 
 @app.route('/change-password', methods=['POST'])
 def change_password():
