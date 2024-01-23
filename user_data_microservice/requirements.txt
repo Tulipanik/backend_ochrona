@@ -1,6 +1,0 @@
-flask
-requests
-pycryptodome
-python-dotenv
-jsonschema
-
