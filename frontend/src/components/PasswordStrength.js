@@ -1,8 +1,7 @@
 import * as React from "react";
 
-export default function PasswordMeterInput({ password }) {
-  const [value, setValue] = React.useState("");
-  const minLength = 8;
+export default function PasswordMeterInput({ password, setPassword }) {
+  const [entropy, setEntropy] = React.useState(0);
 
   function calculateEntropy(text) {
     let leng = 0;
@@ -31,11 +30,32 @@ export default function PasswordMeterInput({ password }) {
     return H;
   }
 
+  React.useEffect(() => {
+    const calculatedEntropy = calculateEntropy(password);
+    setEntropy(calculatedEntropy);
+  }, [password]);
+
+  const getEntropyColorClass = () => {
+    if (entropy <= 2.5) {
+      return "bg-red-400";
+    } else if (entropy <= 3.7) {
+      return "bg-yellow-400";
+    } else {
+      return "bg-green-500";
+    }
+  };
+
   return (
-    <template x-for="(v,i) in 5">
-      <div class="w-1/5 px-1">
-        <div class="h-2 rounded-xl transition-colors"></div>
-      </div>
-    </template>
+    <div className="flex w-1/6">
+      {Array.from({ length: 5 }, (_, index) => (
+        <div key={index} className="w-1/5 px-1">
+          <div
+            className={`h-2 rounded-xl transition-colors ${
+              entropy ? getEntropyColorClass() : "bg-gray-200"
+            }`}
+          ></div>
+        </div>
+      ))}
+    </div>
   );
 }

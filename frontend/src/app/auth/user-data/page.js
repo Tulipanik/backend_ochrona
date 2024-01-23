@@ -65,30 +65,50 @@ export default function UserData() {
   };
 
   return (
-    <div>
-      <button onClick={() => seeFragileData()}>See fragile Data</button>
-      <div>Id card: {fragileData.card_id}</div>
-      <div>Card number: {fragileData.card_number}</div>
-      <button onClick={() => setSee(!see)}>Change password</button>
+    <div className="flex flex-col w-screen">
+      <button
+        className="bg-yellow-400 py-3 px-6 mt-5 ml-10 rounded-full text-lg drop-shadow-lg mb-5 hover:bg-yellow-700 w-1/6"
+        onClick={() => seeFragileData()}
+      >
+        See fragile Data
+      </button>
+      <div className="text-2xl">Id card: {fragileData.card_id}</div>
+      <div className="text-2xl">Card number: {fragileData.card_number}</div>
+      <button
+        className="bg-yellow-400 py-3 px-6 mt-5 ml-10 rounded-full text-lg drop-shadow-lg mb-5 hover:bg-yellow-700  w-1/6"
+        onClick={() => setSee(!see)}
+      >
+        Change password
+      </button>
       {see && (
-        <form onSubmit={handleChange}>
+        <form
+          className="flex flex-col [&_*]:w-3/4 [&_*]:m-2 [&_*]:p-2 [&_*]:text-xl [&_*]:rounded-lg"
+          onSubmit={handleChange}
+        >
           <input
             type="text"
+            className="text-lg"
             placeholder="old password"
             onChange={(e) => (formData.password = e.target.value)}
           />
           <input
             type="text"
             placeholder="new password"
-            onChange={(e) => (formData.password_change_1 = password)}
+            onChange={(e) =>
+              (formData.password_change_1 = setPassword(e.target.value))
+            }
           />
-          <PasswordMeterInput password={password} />
+          <PasswordMeterInput password={password} setPassword={setPassword} />
           <input
             type="text"
             placeholder="confirm new password"
             onChange={(e) => (formData.password_change_2 = e.target.value)}
           />
-          <input type="submit" value="Change password" />
+          <input
+            className="bg-yellow-400 py-3 px-6 mt-5 ml-10 rounded-full text-lg drop-shadow-lg mb-5 hover:bg-yellow-700"
+            type="submit"
+            value="Change password"
+          />
         </form>
       )}
     </div>

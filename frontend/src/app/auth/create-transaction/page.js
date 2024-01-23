@@ -37,7 +37,10 @@ export default function CreateTransacion() {
   };
   return (
     <div>
-      <form onSubmit={makeTransaction} className="flex flex-col ">
+      <form
+        className="flex flex-col [&_*]:w-3/4 [&_*]:m-2 [&_*]:p-2 [&_*]:text-xl [&_*]:rounded-lg"
+        onSubmit={makeTransaction}
+      >
         <label for="account">Account number:</label>
         <input
           type="text"
@@ -70,7 +73,11 @@ export default function CreateTransacion() {
           value={formData.amount}
           onChange={handleChange}
         />
-        <input type="submit" value="Make transaction" />
+        <input
+          className="bg-yellow-400 py-3 px-6 mt-5 ml-10 rounded-full text-lg drop-shadow-lg mb-5 hover:bg-yellow-700"
+          type="submit"
+          value="Make transaction"
+        />
       </form>
     </div>
   );
