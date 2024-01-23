@@ -7,7 +7,7 @@ import PasswordMeterInput from "@/components/PasswordStrength";
 
 export default function UserData() {
   const [see, setSee] = useState(false);
-  cosnt[(password, setPassword)] = useState("");
+  const [password, setPassword] = useState("");
   let formData = {
     password: "",
     password_change_1: password,

@@ -1,9 +1,4 @@
 import * as React from "react";
-import Stack from "@mui/joy/Stack";
-import Input from "@mui/joy/Input";
-import LinearProgress from "@mui/joy/LinearProgress";
-import Typography from "@mui/joy/Typography";
-import Key from "@mui/icons-material/Key";
 
 export default function PasswordMeterInput({ password }) {
   const [value, setValue] = React.useState("");
@@ -37,41 +32,10 @@ export default function PasswordMeterInput({ password }) {
   }
 
   return (
-    <Stack
-      spacing={0.5}
-      sx={{
-        "--hue": Math.min(value.length * 10, 120),
-      }}
-    >
-      <Input
-        type="password"
-        placeholder="Type in here…"
-        startDecorator={<Key />}
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-      />
-      <LinearProgress
-        determinate
-        size="sm"
-        value={Math.min((value.length * 100) / minLength, 100)}
-        sx={{
-          bgcolor: "background.level3",
-          color: "hsl(var(--hue) 80% 40%)",
-        }}
-      />
-      <Typography
-        level="body-xs"
-        sx={{ alignSelf: "flex-end", color: "hsl(var(--hue) 80% 30%)" }}
-      >
-        {calculateEntropy(password) < 3 && "Very weak"}
-        {calculateEntropy(password) >= 3 &&
-          calculateEntropy(password) < 6 &&
-          "Weak"}
-        {calculateEntropy(password) >= 6 &&
-          calculateEntropy(password) < 10 &&
-          "Strong"}
-        {calculateEntropy(password) >= 10 && "Very strong"}
-      </Typography>
-    </Stack>
+    <template x-for="(v,i) in 5">
+      <div class="w-1/5 px-1">
+        <div class="h-2 rounded-xl transition-colors"></div>
+      </div>
+    </template>
   );
 }
