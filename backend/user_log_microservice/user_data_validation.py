@@ -7,10 +7,10 @@ from jsonschema import validate, ValidationError
 
 app = Flask(__name__)
 
-password_manager_url = "http://127.0.0.1:8002/verify-password"
-password_manager_url_count = "http://127.0.0.1:8002/ask-for-password-count"
-password_manager_password_change = "http://127.0.0.1:8002/change-password"
-verify_session = "http://127.0.0.1:8003/validate-session/"
+password_manager_url = "http://password:8002/verify-password"
+password_manager_url_count = "http://password:8002/ask-for-password-count"
+password_manager_password_change = "http://password:8002/change-password"
+verify_session = "http://session:8003/validate-session/"
 
 def get_db_connection():
 	conn = sqlite3.connect('user_database.db')
@@ -185,4 +185,4 @@ def get_user_id(username):
 
 
 if __name__ == "__main__":
-    app.run(port=8001)
+    app.run(host="0.0.0.0", port=8001)

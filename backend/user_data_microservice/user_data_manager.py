@@ -9,7 +9,7 @@ from jsonschema import validate, ValidationError
 app = Flask(__name__)
 
 load_dotenv()
-VALIDATE = "http://127.0.0.1:8003/validate-session/"
+VALIDATE = "http://session:8003/validate-session/"
 
 def get_data_from_db(user_id):
     conn = sqlite3.connect('fragile_data.db')
@@ -63,4 +63,4 @@ def get_fragile_data ():
     return jsonify({"card_id": id_card, "card_number": card_number})
     
 if __name__ == "__main__":
-    app.run(port="8004")
+    app.run(host="0.0.0.0", port="8004")

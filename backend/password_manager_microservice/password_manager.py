@@ -10,7 +10,7 @@ from jsonschema import validate, ValidationError
 
 app = Flask(__name__)
 
-SESSION_URL = "http://127.0.0.1:8003"
+SESSION_URL = "http://session:8003"
 headers = {"Content-Type": "application/json"}
 
 def calculate_entropy(text):
@@ -268,4 +268,4 @@ def change_password():
 
 
 if __name__ == "__main__":
-	app.run(port="8002")
+	app.run(host="0.0.0.0", port="8002")

@@ -3,14 +3,15 @@ import requests
 from flask_cors import CORS
 from jsonschema import validate, ValidationError
 
-url = "http://127.0.0.1:8001"
-VALIDATE = "http://127.0.0.1:8003/validate-session/"
-TRANSACTIONS = "http://127.0.0.1:8005/"
-FRAGILE = "http://127.0.0.1:8004/"
+url = "http://user-log:8001"
+VALIDATE = "http://session:8003/validate-session/"
+TRANSACTIONS = "http://transactions:8005/"
+FRAGILE = "http://user-data:8004/"
 headers = {"Content-Type": "application/json"}
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"])
+CORS(app, origins=['http://localhost:3000'])
+
 
 @app.route('/login-1', methods=['POST'])
 def login():
@@ -240,4 +241,4 @@ def change_password ():
     return response
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    app.run(host="0.0.0.0", port=8000)

@@ -5,7 +5,7 @@ from jsonschema import validate, ValidationError
 
 app = Flask(__name__)
 
-VALIDATE = "http://127.0.0.1:8003/validate-session/"
+VALIDATE = "http://session:8003/validate-session/"
 
 def get_db_connection():
         conn = sqlite3.connect('transactions.db')
@@ -163,4 +163,4 @@ def get_user_data ():
      return jsonify({"money": data["money_state"], "account": data["account_number"]})
 
 if __name__ == "__main__":
-    app.run(port="8005")
+    app.run(host="0.0.0.0", port="8005")

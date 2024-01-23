@@ -1,1 +1,4 @@
+flask
+requests
 jsonschema
+flask_cors
