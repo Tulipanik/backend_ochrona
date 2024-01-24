@@ -84,13 +84,13 @@ export default function UserData() {
           onSubmit={handleChange}
         >
           <input
-            type="text"
+            type="password"
             className="text-lg"
             placeholder="old password"
             onChange={(e) => (formData.password = e.target.value)}
           />
           <input
-            type="text"
+            type="password"
             placeholder="new password"
             onChange={(e) =>
               (formData.password_change_1 = setPassword(e.target.value))
@@ -98,7 +98,7 @@ export default function UserData() {
           />
           <PasswordMeterInput password={password} setPassword={setPassword} />
           <input
-            type="text"
+            type="password"
             placeholder="confirm new password"
             onChange={(e) => (formData.password_change_2 = e.target.value)}
           />

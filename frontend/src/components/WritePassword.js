@@ -16,7 +16,7 @@ export default function WritePassword({ elements, submitPassword }) {
             const toWrite = elements.includes(index.toString());
             return (
               <input
-                type="text"
+                type="password"
                 className="rounded-full border-2 border-yellow-400"
                 id={index}
                 key={index}

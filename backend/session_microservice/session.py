@@ -42,6 +42,11 @@ def validate_session(session_id):
         username = row[0]
         current_time = datetime.now()
         if current_time - created_at <= SESSION_EXPIRATION_TIME:
+            created_time = datetime.now().isoformat()
+            with sqlite3.connect(DB_FILE) as conn:
+                conn.execute('UPDATE sessions SET creation = ? WHERE session_id = ?', (created_time, session_id))
+                conn.commit()
+
             return jsonify({'valid': True, 'user_id': username})
     
     return jsonify({'valid': False})

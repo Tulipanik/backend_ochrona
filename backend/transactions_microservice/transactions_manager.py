@@ -82,7 +82,7 @@ def make_transaction ():
 
     get_to_account = dict(get_to_account)["user_id"]
 
-    conn.execute('UPDATE users SET money_state = money_state - ? WHERE user_id = ?', (amount, get_to_account))
+    conn.execute('UPDATE users SET money_state = money_state + ? WHERE user_id = ?', (amount, get_to_account))
     conn.commit()
     conn.close()
 
